@@ -1,12 +1,17 @@
-data
-├── fastq
-│   └── CBTM-364B_LV_cells
-│       ├── ERR6449755_S1_L001_I1_001.fastq.gz
-│       ├── ERR6449755_S1_L001_R1_001.fastq.gz
-│       ├── ERR6449755_S1_L001_R2_001.fastq.gz
-│       ├── ERR7423242_S1_L001_I1_001.fastq.gz
-│       ├── ERR7423242_S1_L001_R1_001.fastq.gz
-│       └── ERR7423242_S1_L001_R2_001.fastq.gz
-└── MANIFEST.tree
+data/fastq
+├── CBTM-364B_LA_cells
+│   ├── ERR6449758_S1_L001_I1_001.fastq.gz
+│   ├── ERR6449758_S1_L001_R1_001.fastq.gz
+│   ├── ERR6449758_S1_L001_R2_001.fastq.gz
+│   ├── ERR7423245_S1_L001_I1_001.fastq.gz
+│   ├── ERR7423245_S1_L001_R1_001.fastq.gz
+│   └── ERR7423245_S1_L001_R2_001.fastq.gz
+└── CBTM-364B_LV_cells
+    ├── ERR6449755_S1_L001_I1_001.fastq.gz
+    ├── ERR6449755_S1_L001_R1_001.fastq.gz
+    ├── ERR6449755_S1_L001_R2_001.fastq.gz
+    ├── ERR7423242_S1_L001_I1_001.fastq.gz
+    ├── ERR7423242_S1_L001_R1_001.fastq.gz
+    └── ERR7423242_S1_L001_R2_001.fastq.gz
 
-2 directories, 7 files
+2 directories, 12 files
