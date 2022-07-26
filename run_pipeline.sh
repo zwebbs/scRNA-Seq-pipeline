@@ -1,17 +1,10 @@
 #!/bin/bash
-#PBS -N scRNA-Seq-pipeline
-#PBS -S /bin/bash
-#PBS -l walltime=08:00:00
-#PBS -l nodes=1:ppn=1
-#PBS -l mem=2gb
-#PBS -o logs/scRNA-Seq-pipeline.out
-#PBS -e logs/scRNA-Seq-pipeline.err
 
 # File Name: run_pipeline.sh
 # Created On: 2022-07-07
 # Created By: ZW
 # Purpose: runs the scRNA-Seq alignment, quantification, and analysis
-# pipeline for a given set of fastq files and experimental metadata
+# pipeline for the given Heart Cell Atlas (HCA) data
 
 # check passed commandline arguments
 ## of which there are two.
@@ -19,7 +12,7 @@
 ###   -c <analysis configuration file .yaml> [required]
 ###   -d (BOOLEAN flag to complete a snakemake dry run) [optional]
 
-PIPELINE_NAME="scRNA-Seq-pipeline"
+PIPELINE_NAME="HCA-scRNA-Seq"
 
 
 while getopts ":j:c:d" 'opt';
@@ -51,13 +44,14 @@ echo "dry run ?: ${dry_run_flag}"
 snakemake --snakefile Snakefile \
     -j ${parallel_jobs} -kp --rerun-incomplete \
     --config yaml_config=${config_file} \
-    --cluster "qsub -V -l walltime={resources.walltime} \
-     -l nodes={resources.nodes}:ppn={resources.processors_per_node} \
-     -l mem={resources.total_memory}mb \
-     -N {rulename}_{resources.job_id} \
-     -S /bin/bash \
-     -e logs/{rulename}_{resources.job_id}.err \
-     -o logs/{rulename}_{resources.job_id}.out" \
+    --cluster "sbatch --job-name={rulename}_{resources.job_id} \
+     --partition=broadwl \
+     --error=logs/{rulename}_{resources.job_id}.err \
+     --output=logs/{rulename}_{resources.job_id}.out \
+     --nodes={resources.nodes} \
+     --ntasks-per-node={resources.cpus_per_node} \
+     --mem={resources.total_memory_mb} \
+     --time={resources.walltime}" \
      ${dry_run_flag} 1>  "logs/${PIPELINE_NAME}.out" 2> "logs/${PIPELINE_NAME}.err"
 
 # write that the pipeline is complete
