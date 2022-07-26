@@ -6,3 +6,5 @@ env/snakemake/lib64
 .snakemake/*
 logs/*.err
 logs/*.out
+data/fastq/*.fastq
+data/fastq/*.fastq.gz
