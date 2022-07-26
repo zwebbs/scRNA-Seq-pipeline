@@ -1,0 +1,12 @@
+data
+├── fastq
+│   └── CBTM-364B_LV_cells
+│       ├── ERR6449755_S1_L001_I1_001.fastq.gz
+│       ├── ERR6449755_S1_L001_R1_001.fastq.gz
+│       ├── ERR6449755_S1_L001_R2_001.fastq.gz
+│       ├── ERR7423242_S1_L001_I1_001.fastq.gz
+│       ├── ERR7423242_S1_L001_R1_001.fastq.gz
+│       └── ERR7423242_S1_L001_R2_001.fastq.gz
+└── MANIFEST.tree
+
+2 directories, 7 files

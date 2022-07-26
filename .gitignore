@@ -8,3 +8,5 @@ logs/*.err
 logs/*.out
 data/fastq/*/*.fastq
 data/fastq/*/*.fastq.gz
+data/align/*/
+data/align/__*.mro
