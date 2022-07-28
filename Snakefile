@@ -38,8 +38,8 @@ get_fastq_dir = lambda run_id: SEQ[SEQ_MAP[run_id]]["fastq_dir"]
 # ----------------------------------------------------------------------------
 rule All:
     input: 
-        expand(WORKDIR + "data/align/cellranger_counts.{run_id}.rc.out", run_id=RUN_IDS)
-        
+        expand(WORKDIR + "data/align/cellranger_count.{run_id}.rc.out", run_id=RUN_IDS)
+
 
 # Rule 1. Align and Quantify from FASTQ.
 # ---------------------------------------------------------------------------
@@ -49,7 +49,7 @@ rule CellRanger_FASTQ_to_counts:
     input:
         transcriptome = REF + GLOBALS.files.transcriptome,
         fastq_dir = lambda wildcards: WORKDIR + get_fastq_dir(run_id=f"{wildcards.run_id}")
-    output: cellranger_counts_rc = WORKDIR + "data/align/cellranger_counts.{run_id}.rc.out"
+    output: cellranger_count_rc = WORKDIR + "data/align/cellranger_count.{run_id}.rc.out"
     params: **(cellranger_rp.parameters), sample = lambda wildcards: f"{wildcards.run_id}"
     resources: **(cellranger_rp.resources), job_id = lambda wildcards: f"{wildcards.run_id}"
     envmodules: *(cellranger_rp.parameters.envmodules)
@@ -60,10 +60,8 @@ rule CellRanger_FASTQ_to_counts:
         " --fastqs={input.fastq_dir}"
         " --sample={params.sample}"
         " --expect-cells={params.ncells}"
-        " --localcores={resources.cpus_per_node}"
-        " --localmem={resources.total_memory_gb}"
         " {params.extra_args}"
-        " && check_directory -o {output.cellranger_counts_rc}"
+        " && check_directory -o {output.cellranger_count_rc}"
         " {params.checkfiles} {params.sample}/outs/"
 
 
