@@ -35,6 +35,9 @@ do
 done
 
 
+# load modules
+module load python/cpython-3.8.5
+
 # print the passed commandline options
 echo "Number of concurrent jobs: ${parallel_jobs}"
 echo "Selected config file: ${config_file}"

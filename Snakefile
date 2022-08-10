@@ -17,8 +17,8 @@ cfg = Configuration(filepath=yaml_config_filepath)
 cfg.load()
 
 GLOBALS = cfg.global_params
-WORKDIR = GLOBALS.working_directory
-REF = GLOBALS.misc.reference_directory
+WORKDIR = Path(GLOBALS.working_directory)
+REF = Path(GLOBALS.misc.reference_directory)
 
 # set analysis workdir
 workdir: WORKDIR
@@ -38,7 +38,7 @@ get_fastq_dir = lambda run_id: SEQ[SEQ_MAP[run_id]]["fastq_dir"]
 # ----------------------------------------------------------------------------
 rule All:
     input: 
-        expand(WORKDIR + "data/align/cellranger_count.{run_id}.rc.out", run_id=RUN_IDS)
+        expand(WORKDIR / "data/align/cellranger_count.{run_id}.rc.out", run_id=RUN_IDS)
 
 
 # Rule 1. Align and Quantify from FASTQ.
@@ -46,13 +46,11 @@ rule All:
 
 cellranger_rp = cfg.get_rule_params(rulename="CellRanger_FASTQ_to_counts")
 rule CellRanger_FASTQ_to_counts:
-    input:
-        transcriptome = REF + GLOBALS.files.transcriptome,
-        fastq_dir = lambda wildcards: WORKDIR + get_fastq_dir(run_id=f"{wildcards.run_id}")
-    output: cellranger_count_rc = WORKDIR + "data/align/cellranger_count.{run_id}.rc.out"
+    input: transcriptome = (REF / GLOBALS.files.transcriptome),
+        fastq_dir = lambda wildcards: (WORKDIR / get_fastq_dir(run_id=f"{wildcards.run_id}"))
+    output: cellranger_count_rc = (WORKDIR / "data/align/cellranger_count.{run_id}.rc.out")
     params: **(cellranger_rp.parameters), sample = lambda wildcards: f"{wildcards.run_id}"
     resources: **(cellranger_rp.resources), job_id = lambda wildcards: f"{wildcards.run_id}"
-    envmodules: *(cellranger_rp.parameters.envmodules)
     shell:
         "mkdir -p data/align/ && cd data/align/ && "
         "cellranger count --id={params.sample}"
