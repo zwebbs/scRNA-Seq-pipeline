@@ -19,6 +19,7 @@ cfg.load()
 GLOBALS = cfg.global_params
 WORKDIR = Path(GLOBALS.working_directory)
 REF = Path(GLOBALS.misc.reference_directory)
+METADATA = (WORKDIR / Path(GLOBALS.files.sample_metadata))
 
 # set analysis workdir
 workdir: WORKDIR
@@ -38,12 +39,13 @@ get_fastq_dir = lambda run_id: SEQ[SEQ_MAP[run_id]]["fastq_dir"]
 # ----------------------------------------------------------------------------
 rule All:
     input: 
-        expand(WORKDIR / "data/align/cellranger_count.{run_id}.rc.out", run_id=RUN_IDS)
+        expand(WORKDIR / "data/align/cellranger_count.{run_id}.rc.out", run_id=RUN_IDS),
+        multiext("data/plots/HCA_Integration_clust_", "pca.pdf", "tsne.pdf", "umap.pdf"),
+        multiext("data/plots/HCA_Integration_clust_", "cardio.pdf", "fib.pdf","endo.pdf", "peri.pdf")
 
 
 # Rule 1. Align and Quantify from FASTQ.
 # ---------------------------------------------------------------------------
-
 cellranger_rp = cfg.get_rule_params(rulename="CellRanger_FASTQ_to_counts")
 rule CellRanger_FASTQ_to_counts:
     input: transcriptome = (REF / GLOBALS.files.transcriptome),
@@ -61,5 +63,29 @@ rule CellRanger_FASTQ_to_counts:
         " {params.extra_args}"
         " && check_directory -o {output.cellranger_count_rc}"
         " {params.checkfiles} {params.sample}/outs/"
+
+
+# Rule 2. Integrate data and plot clusters and markers using Seurat
+# ----------------------------------------------------------------------------
+seurat_integration_rp = cfg.get_rule_params(rulename="Seurat_Integration")
+rule Seurat_Integration:
+    input: metadata = METADATA
+    params: analysis_name = "HCA_Integration",
+        datadir = "data/align/", plotdir = "data/plots/",
+        rdata_path = "data/rdata/integrated_seurat.rds"
+    resources: **(seurat_integration_rp.resources), job_id = "glob"
+    output: 
+        multiext("data/plots/HCA_Integration_clust_", "pca.pdf", "tsne.pdf", "umap.pdf"),
+        multiext("data/plots/HCA_Integration_clust_", "cardio.pdf", "fib.pdf","endo.pdf", "peri.pdf") 
+    shell:
+        "mkdir -p {params.plotdir} && mkdir -p data/rdata/ &&"
+        "Rscript scripts/integrateAndPlot.R -f {input.metadata}"
+        " -d {params.datadir} -o {params.plotdir}"
+        " -n {params.analysis_name} -r {params.rdata_path}"
+
+
+
+
+
 
 
