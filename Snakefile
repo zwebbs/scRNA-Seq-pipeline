@@ -18,6 +18,8 @@ cfg.load()
 
 GLOBALS = cfg.global_params
 WORKDIR = Path(GLOBALS.working_directory)
+PLOT_DIR = Path(GLOBALS.misc.plot_directory)
+DATA_DIR = Path(GLOBALS.misc.data_dir)
 REF = Path(GLOBALS.misc.reference_directory)
 METADATA = (WORKDIR / Path(GLOBALS.files.sample_metadata))
 
@@ -27,22 +29,24 @@ workdir: WORKDIR
 # build a map of the sequencing data
 SEQ = GLOBALS.files.sequencing
 RUN_IDS = [s["run_id"] for s in SEQ]  # get the run ids for each sequencing obj
-SEQ_MAP = {run_id:idx for idx,run_id in enumerate(RUN_IDS)}  # get their index 
+SEQ_MAP = {run_id:idx for idx,run_id in enumerate(RUN_IDS)}  # get their index
 
 
 # Function Definitions
 # ----------------------------------------------------------------------------
-get_fastq_dir = lambda run_id: SEQ[SEQ_MAP[run_id]]["fastq_dir"] 
+get_fastq_dir = lambda run_id: SEQ[SEQ_MAP[run_id]]["fastq_dir"]
 
 
 # Rule 0. Pipeline Global Returns
 # ----------------------------------------------------------------------------
 rule All:
-    input: 
+    input:
         expand(WORKDIR / "data/align/cellranger_count.{run_id}.rc.out", run_id=RUN_IDS),
         multiext("data/plots/HCA_Integration_clust_", "pca.pdf", "tsne.pdf", "umap.pdf"),
         multiext("data/plots/HCA_Integration_clust_", "cardio.pdf", "fib.pdf","endo.pdf", "peri.pdf")
-
+        expand(PLOT_DIR / "{run_id}_scrublet_hist.png", run_id=RUN_IDS),
+        expand(PLOT_DIR / "{run_id}_scrublet_umap.png", run_id=RUN_IDS),
+        expand(DATA_DIR / "scrublet/{run_id}_scrublet_doublets.csv", run_id=RUN_IDS)
 
 # Rule 1. Align and Quantify from FASTQ.
 # ---------------------------------------------------------------------------
@@ -65,7 +69,31 @@ rule CellRanger_FASTQ_to_counts:
         " {params.checkfiles} {params.sample}/outs/"
 
 
-# Rule 2. Integrate data and plot clusters and markers using Seurat
+# Rule 4. Doublet detection using scrublet
+# ----------------------------------------------------------------------------
+scrublet_detection_rp = cfg.get_rule_params(rulename="Scrublet_Doublet_Detect")
+rule Scrublet_Doublet_Detect:
+    input: rules.CellRanger_FASTQ_to_counts.output.cellranger_count_rc
+    params:
+        **(scrublet_detection_rp.parameters),
+        plotdir = PLOT_DIR,
+        outdir = DATA_DIR / "scrublet/",
+        sample_name = lambda wildcards: f"{wildcards.run_id}"
+    resources:
+        **(scrublet_detection_rp.resources),
+        job_id = lambda wildcards: f"{wildcards.run_id}"
+    output:
+        PLOT_DIR / "{run_id}_scrublet_hist.png",
+        PLOT_DIR / "{run_id}_scrublet_umap.png",
+        DATA_DIR / "scrublet/{run_id}_scrublet_doublets.csv"
+    shell:
+        "mkdir -p {params.plotdir} {params.outdir} && "
+        "scripts/doublet_detection.py -r {params.doublet_prior_rate}"
+        " --datadir {params.datadir} --sample-name {params.sample_name}"
+        " --outdir {params.outdir} --plotdir {params.plotdir}"
+
+
+# Rule 3. Integrate data and plot clusters and markers using Seurat
 # ----------------------------------------------------------------------------
 seurat_integration_rp = cfg.get_rule_params(rulename="Seurat_Integration")
 rule Seurat_Integration:
@@ -74,18 +102,11 @@ rule Seurat_Integration:
         datadir = "data/align/", plotdir = "data/plots/",
         rdata_path = "data/rdata/integrated_seurat.rds"
     resources: **(seurat_integration_rp.resources), job_id = "glob"
-    output: 
+    output:
         multiext("data/plots/HCA_Integration_clust_", "pca.pdf", "tsne.pdf", "umap.pdf"),
-        multiext("data/plots/HCA_Integration_clust_", "cardio.pdf", "fib.pdf","endo.pdf", "peri.pdf") 
+        multiext("data/plots/HCA_Integration_clust_", "cardio.pdf", "fib.pdf","endo.pdf", "peri.pdf")
     shell:
         "mkdir -p {params.plotdir} && mkdir -p data/rdata/ &&"
         "Rscript scripts/integrateAndPlot.R -f {input.metadata}"
         " -d {params.datadir} -o {params.plotdir}"
         " -n {params.analysis_name} -r {params.rdata_path}"
-
-
-
-
-
-
-
